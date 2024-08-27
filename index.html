@@ -32,10 +32,10 @@
                 <img src="./logo.png" class="logo-img">
             </div>
             <ul class="nav-list">
-                <li><a href="#">Dashboard</a></li>
-                <li><a href="#">Patients</a></li>
-                <li><a href="#">Doctors</a></li>
-                <li><a href="#">Settings</a></li>
+                <li><a href="index.html">Dashboard</a></li>
+                <li><a href="patients.html">Patients</a></li>
+                <li><a href="billing.html">Billing</a></li>
+                <li><a href="Logout">LogOut</a></li>
             </ul>
             <div class="doctor-container">
                 <h3 style="color: #00796b">Doctor on Duty</h3>
@@ -51,21 +51,25 @@
 
             <!-- Dashboard Sections -->
             <div class="dashboard-sections">
+                <!-- Patient List Section -->
+    
                 <section class="patient-list-section">
-                    <h2>Patient List</h2>
-                    <div class="patient-list" id="patientList">
-                        <!-- Patient data will be inserted here dynamically -->
-                    </div>
-                </section>
 
+                    <h2>Patient List</h2>
+
+                    <div class="patient-list">
+
+
+                    </div>
+
+                </section>
 
                 <!-- Consultation Section -->
                 <section class="consultation-section">
                     <h2>Patient Information</h2>
                     <div class="consultation-details">
-                        <div class="mainpatient">
-                        </div>
                         <div class="details">
+
                         </div>
                     </div>
                 </section>
@@ -79,20 +83,21 @@
                     </div>
                 </section>
 
-                <!-- Blood Formula Section -->
+                <!-- medicine Section -->
                 <section class="blood-formula-section">
                     <h2>Medicines</h2>
                     <div class="blood-formula">
                         <table class="medicines-table">
                             <thead>
                                 <tr>
-                                    <th>Medicine</th>
-                                    <th>Date</th>
-                                    <th>Quantity</th>
+                                    <th>Name</th>
+                                    <th>Dosage</th>
+                                    <th>Frequency</th>
+                                    <th>Duration</th>
                                 </tr>
                             </thead>
                             <tbody>
-                             
+                                <!-- Medicines rows will be inserted here -->
                             </tbody>
                         </table>
                     </div>
@@ -118,7 +123,96 @@
     </div>
 
     <script>
+        $(document).ready(function () {
+            // Initialize FullCalendar
+            var calendarEl = document.getElementById('calendar');
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                editable: true, // Enables event dragging
+                selectable: true // Enables selecting time slots
+            });
+            calendar.render();
 
+            calendar.gotoDate(new Date());
+            // Make the calendar resizable
+            $('#calendar-container').resizable({
+                alsoResize: '#calendar',
+                stop: function () {
+                    calendar.updateSize(); // Update the calendar size after resizing
+                }
+            });
+        });
+
+
+        $(document).ready(function () {
+            // Initialize the chart
+            var ctx = document.getElementById('line-chart1').getContext('2d');
+            var lineChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['9am', '10am', '11am', '12pm', '1pm', '2pm', '3pm'],
+                    datasets: [{
+                        label: 'Normal saline',
+                        data: [100, 89, 72, 68, 55, 43, 30],
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 2,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: false, // Turn off responsive resizing to handle resizing manually
+                    maintainAspectRatio: false, // Prevent the chart from maintaining aspect ratio
+                }
+            });
+
+            // Make the chart resizable
+            $('#chart-container').resizable({
+                alsoResize: '#line-chart',
+                stop: function () {
+                    lineChart.resize(); // Resize the chart after resizing the container
+                }
+            });
+        });
+
+
+        $(document).ready(function () {
+            // Initialize the chart
+            var ctx = document.getElementById('line-chart2').getContext('2d');
+            var dataPoints = [30, 43, 55, 68, 72, 89, 91];
+
+            var lineChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['9am', '10am', '11am', '12pm', '1pm', '2pm', '3pm'],
+                    datasets: [{
+                        label: 'Urine',
+                        data: dataPoints,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 2,
+                        fill: false,
+                        pointBackgroundColor: dataPoints.map((value, index) => {
+                            return index === dataPoints.length - 1 ? 'red' : 'rgba(75, 192, 192, 1)';
+                        }),
+                        pointRadius: 5,
+                        pointHoverRadius: 5,
+                        pointBorderColor: 'transparent', // Remove the border
+                    }]
+                },
+                options: {
+                    responsive: false,
+                    maintainAspectRatio: false,
+                }
+            });
+
+            // Blinking effect
+            setInterval(function () {
+                var currentColor = lineChart.data.datasets[0].pointBackgroundColor[dataPoints.length - 1];
+                lineChart.data.datasets[0].pointBackgroundColor[dataPoints.length - 1] =
+                    currentColor === 'red' ? 'rgba(75, 192, 192, 1)' : 'red';
+
+                lineChart.update();
+            }, 1000);
+        });
     </script>
 
     <script src="script.js"></script>

@@ -1,137 +1,105 @@
-document.addEventListener('DOMContentLoaded', function() {
-    // Function to fetch patient data from the server
-    async function fetchPatientData() {
-        try {
-            const response = await fetch('http://localhost:3000/api/patients');
-            const data = await response.json();
-            return data.patients; // Adjust based on your API structure
-        } catch (error) {
-            console.error('Error fetching patient data:', error);
-            return [];
-        }
-    }
+$(document).ready(function () {
+    // Fetch patient data from the server
+    $.ajax({
+        url: '/api/patients',
+        method: 'GET',
+        success: function (patients) {
+            // Clear any existing content
+            $('.patient-list').empty();
+            $('.consultation-details').empty();
+            $('.medicines-table').empty(); // Clear existing medicines
 
-    // Function to render patient data
-    function renderPatientList(patients) {
-        const patientList = document.getElementById('patientList');
-        patientList.innerHTML = ''; // Clear existing content
+            // Function to format the date to DD-MM-YYYY
+            function formatDate(dateString) {
+                const date = new Date(dateString);
+                const day = date.getDate().toString().padStart(2, '0');
+                const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Months are zero-based
+                const year = date.getFullYear();
+                return `${day}-${month}-${year}`;
+            }
 
-        patients.forEach(patient => {
-            // Create a new div for each patient
-            const patientDiv = document.createElement('div');
-            patientDiv.classList.add('patient-item');
+            // Dynamically populate patient data
+            patients.forEach(patient => {
+                const formattedDob = formatDate(patient.dob);
 
-            // Set up the HTML for this patient
-            patientDiv.innerHTML = `
-                <div class="patient">
-                    <img src="${patient.imageUrl}" alt="${patient.name}" class="patient-image" />
-                    <div class="patient-info">
-                        <a href="patient-details.html?id=${patient._id}" class="patient-name">${patient.name}</a>
-                        <p class="patient-status">${patient.status}</p>
+                const patientElement = `
+                    <div class="patient" data-id="${patient._id}">
+                        <img src="${patient.image}" alt="Patient" width="50px" height="50px">
+                        <div class="patient-info">
+                            <h3>${patient.name}</h3>
+                            <a href="${patient.reportLink}" class="report">Report</a>
+                        </div>
+                        <span class="status ${patient.status === 'On drip' ? 'ongoing' : 'offgoing'}">${patient.status}</span>
                     </div>
-                </div>
-            `;
+                `;
+                $('.patient-list').append(patientElement);
+            });
 
-            // Append to the patient list
-            patientList.appendChild(patientDiv);
-        });
-    }
+            // Handle click event for patient items
+            $('.patient').click(function () {
+                const patientId = $(this).data('id');
 
-    // Fetch data and render
-    fetchPatientData().then(patients => {
-        renderPatientList(patients);
-    });
-});
+                // Find the clicked patient data
+                const selectedPatient = patients.find(patient => patient._id === patientId);
 
+                if (selectedPatient) {
+                    const formattedDob = formatDate(selectedPatient.dob);
 
+                    const patientDetails = `
+                        <img src="${selectedPatient.image}" alt="Patient" width="100px" class="mainpatient">
+                        <div class="details">
+                            <p><b>${selectedPatient.name}</b> - ${selectedPatient.age} years (${formattedDob})</p>
+                            <p><b>Symptoms:</b> ${selectedPatient.symptoms}</p>
+                            <p><b>Diagnosis:</b> ${selectedPatient.diagnosis}</p>
+                            <p><b>Physician:</b> ${selectedPatient.physician}</p>
+                        </div>
+                    `;
+                    $('.consultation-details').html(patientDetails);
 
-$(document).ready(function () {
-    // Initialize FullCalendar
-    var calendarEl = document.getElementById('calendar');
-    var calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
-        editable: true, // Enables event dragging
-        selectable: true // Enables selecting time slots
-    });
-    calendar.render();
+                    // Fetch medicines for the selected patient from the integrated array
+                    const medicines = selectedPatient.medicines;
 
-    calendar.gotoDate(new Date());
-    // Make the calendar resizable
-    $('#calendar-container').resizable({
-        alsoResize: '#calendar',
-        stop: function () {
-            calendar.updateSize(); // Update the calendar size after resizing
-        }
-    });
-});
+                    // Clear any existing medicines
+                    $('.medicines-table').empty();
 
+                    // Build the medicines table
+                    let medicinesTable = `
+                        <table class="medicines-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Dosage</th>
+                                    <th>Frequency</th>
+                                    <th>Duration</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    medicines.forEach(medicine => {
+                        medicinesTable += `
+                            <tr>
+                                <td>${medicine.name}</td>
+                                <td>${medicine.dosage}</td>
+                                <td>${medicine.frequency}</td>
+                                <td>${medicine.duration}</td>
+                            </tr>
+                        `;
+                    });
+                    medicinesTable += `
+                            </tbody>
+                        </table>
+                    `;
+                    $('.medicines-table').html(medicinesTable);
+                }
+            });
 
-$(document).ready(function () {
-    // Initialize the chart
-    var ctx = document.getElementById('line-chart1').getContext('2d');
-    var lineChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: ['9am', '10am', '11am', '12pm', '1pm', '2pm', '3pm'],
-            datasets: [{
-                label: 'Normal saline',
-                data: [100, 89, 72, 68, 55, 43, 30],
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 2,
-                fill: false
-            }]
+            // Optionally, trigger a click event on the first patient to show initial details
+            if (patients.length > 0) {
+                $('.patient').first().click();
+            }
         },
-        options: {
-            responsive: false, // Turn off responsive resizing to handle resizing manually
-            maintainAspectRatio: false, // Prevent the chart from maintaining aspect ratio
+        error: function (error) {
+            console.error('Error fetching patient data:', error);
         }
     });
-
-    // Make the chart resizable
-    $('#chart-container').resizable({
-        alsoResize: '#line-chart',
-        stop: function () {
-            lineChart.resize(); // Resize the chart after resizing the container
-        }
-    });
-});
-
-
-$(document).ready(function () {
-    // Initialize the chart
-    var ctx = document.getElementById('line-chart2').getContext('2d');
-    var dataPoints = [30, 43, 55, 68, 72, 89, 91];
-
-    var lineChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: ['9am', '10am', '11am', '12pm', '1pm', '2pm', '3pm'],
-            datasets: [{
-                label: 'Urine',
-                data: dataPoints,
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 2,
-                fill: false,
-                pointBackgroundColor: dataPoints.map((value, index) => {
-                    return index === dataPoints.length - 1 ? 'red' : 'rgba(75, 192, 192, 1)';
-                }),
-                pointRadius: 5,
-                pointHoverRadius: 5,
-                pointBorderColor: 'transparent', // Remove the border
-            }]
-        },
-        options: {
-            responsive: false,
-            maintainAspectRatio: false,
-        }
-    });
-
-    // Blinking effect
-    setInterval(function () {
-        var currentColor = lineChart.data.datasets[0].pointBackgroundColor[dataPoints.length - 1];
-        lineChart.data.datasets[0].pointBackgroundColor[dataPoints.length - 1] =
-            currentColor === 'red' ? 'rgba(75, 192, 192, 1)' : 'red';
-
-        lineChart.update();
-    }, 1000);
 });
